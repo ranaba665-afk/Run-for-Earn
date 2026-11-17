@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#ffffff">
+<title>Run for Earn</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+<style>
+:root{--ink:#333;--muted:#777}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fff;color:var(--ink);font-family:Arial,Helvetica,sans-serif;touch-action:manipulation}
+#app{height:100%;display:flex;flex-direction:column;max-width:1000px;margin:auto;padding:0;gap:8px;position:relative}
+#gameScreen{height:100%;display:flex;flex-direction:column;padding:12px;gap:8px}
+.home{position:absolute;inset:0;background:#fff;z-index:5;padding:10px 3.2%;display:flex;flex-direction:column}
+.home-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;font:400 clamp(16px,5vw,30px) monospace;letter-spacing:3px;color:#444}
+.home-wallet{border:4px solid #555;padding:8px 12px;font:400 clamp(15px,4vw,25px) monospace;letter-spacing:2px;min-width:38%;line-height:1.35}
+.home-center{position:absolute;left:0;right:0;top:19%;display:flex;flex-direction:column;align-items:center;text-align:center}
+.home-rabbit{font:700 clamp(42px,10vw,76px) monospace;line-height:1;color:#444;letter-spacing:-15px;padding-right:15px}
+.home-title{font-weight:800;font-size:clamp(34px,8vw,62px);letter-spacing:-1.5px;margin-top:34px;color:#444}
+.home-menu{position:absolute;top:36.5%;left:19%;width:62%;display:flex;flex-direction:column;gap:clamp(20px,5.2vh,48px)}
+.home-menu button{height:clamp(62px,8vh,88px);font:400 clamp(17px,4.6vw,30px) monospace;letter-spacing:clamp(1px,0.55vw,4px);border:5px solid #555;color:#444;padding:4px;white-space:nowrap}
+.home-terms{position:absolute;top:auto;bottom:10%;left:0;right:0;text-align:center;font-size:clamp(15px,3.5vw,22px);color:#555}
+.home-settings{position:absolute;right:4%;bottom:2%;border:0;font-size:32px;padding:5px;min-height:0}
+.home-info{position:absolute;inset:0;background:#ffffffed;z-index:8;display:flex;align-items:center;justify-content:center;padding:20px}
+.home-info .info-card{border:3px solid #555;background:#fff;padding:24px;max-width:420px;text-align:center;color:#444}
+.home-info h2{font-family:monospace;letter-spacing:3px}
+.home-info button{margin-top:12px}
+header{display:flex;align-items:center;justify-content:flex-end;gap:24px;min-height:36px;font-family:monospace;font-weight:700;letter-spacing:2px;color:#555}
+.brand{display:none}
+.pill{background:transparent;border:0;border-radius:0;padding:0;font:700 17px monospace;letter-spacing:2px;box-shadow:none;color:#555}
+main{position:relative;flex:1;min-height:260px;overflow:hidden;background:#fff;border:0;box-shadow:none}
+canvas{width:100%;height:100%;display:block;image-rendering:pixelated;touch-action:manipulation}
+.overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:#ffffff00}
+.panel{width:min(420px,94%);text-align:center;background:#ffffffed;border:0;border-radius:0;padding:18px 12px;box-shadow:none}
+.panel h1{margin:0 0 8px;font:700 clamp(22px,5vw,30px) monospace;letter-spacing:8px;color:#333}
+.panel p{color:#555;line-height:1.5;margin:8px 0 16px;font-size:16px}
+.panel .rabbit-mark{font:700 42px monospace;color:#444;filter:grayscale(1)}
+button{border:2px solid #555;border-radius:0;background:#fff;color:#333;font-weight:700;font-size:15px;padding:11px 18px;min-height:44px;cursor:pointer;box-shadow:none}
+button:active{background:#eee}
+.secondary{background:#fff;color:#444;box-shadow:none}
+.controls{display:flex;align-items:center;justify-content:center;gap:10px}
+.controls button{flex:1;max-width:210px;touch-action:none}
+.hint{text-align:center;color:#777;font:12px monospace;padding-bottom:2px}
+.hidden{display:none!important}
+@media(orientation:landscape) and (max-height:520px){#app{padding:7px;gap:5px}header{min-height:25px}.pill{font-size:14px}main{border-radius:0}.controls button{min-height:36px;padding:6px}.hint{display:none}}
+
+.wallet{position:absolute;inset:0;background:#fff;z-index:6;overflow-y:auto;padding:10px 4% 16px;display:flex;flex-direction:column;align-items:center;color:#444}
+.wallet-bar{width:100%;display:flex;align-items:center;position:relative;min-height:44px}
+.wallet-back{border:0;background:none;font:700 34px monospace;min-height:0;padding:0 10px;color:#444}
+.wallet-bar h2{position:absolute;left:0;right:0;margin:0;text-align:center;font:400 clamp(20px,6vw,34px) monospace;letter-spacing:6px;pointer-events:none}
+.wallet-coins{margin-top:6px}
+.wallet-lbl{font-size:clamp(14px,3.6vw,20px);margin-top:6px}
+.wallet-big{font-size:clamp(40px,12vw,68px);line-height:1.1;margin-bottom:12px}
+.wallet-box{width:100%;max-width:560px;border:10px solid #555;padding:10px}
+.wallet-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.wallet-cell{border:3px solid #555;text-align:center;padding:6px 2px;font-size:clamp(13px,3.4vw,20px)}
+.wallet-cell b{display:block;font:400 clamp(24px,7vw,40px) Arial,sans-serif}
+.wallet-cell .y{color:#e6d800}.wallet-cell .r{color:#e53012}
+#withdrawBtn{width:100%;margin-top:14px;border:5px solid #555;font:400 clamp(24px,7vw,44px) Arial,sans-serif;height:clamp(60px,9vh,84px)}
+.wallet-note{text-align:center;margin:12px 0 4px;font-size:clamp(13px,3.4vw,18px)}
+.wallet-hist{width:100%;max-width:560px;flex:1;margin-top:16px}
+.wallet-hist h3{margin:0 0 8px;font:400 clamp(20px,5.4vw,30px) Arial,sans-serif}
+.wallet-hist .row{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding:8px 0;font-size:15px}
+.wallet-hist .empty{color:#999;font-size:15px}
+.wallet-rules{align-self:flex-end;border:0;background:none;font:400 clamp(18px,5vw,28px) Arial,sans-serif;padding:8px 4px;min-height:0}
+.home-wallet{cursor:pointer}
+
+.sc-line{width:78%;border-top:3px solid #111;margin:4px 0 12px}
+.podium{display:flex;align-items:flex-end;justify-content:center;width:100%;max-width:560px;margin-top:6px}
+.podium div{border:3px solid #222;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:6px 2px;font-size:clamp(34px,10vw,60px);line-height:1.1}
+.podium div b{display:block;font-weight:400;border-top:2px solid #222;margin:6px 8px 0;padding-top:8px;font-size:.62em;color:#000}
+.pd1{height:clamp(190px,30vh,260px)}.pd2{height:clamp(140px,22vh,190px)}.pd3{height:clamp(110px,17vh,150px)}
+.row-box{width:100%;max-width:560px;border:2px solid #333;border-radius:14px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;font-size:clamp(16px,4.4vw,24px)}
+.lb-note{max-width:560px;font-size:clamp(11px,3vw,15px);margin:6px 0 10px;text-align:center}
+.link-btn{background:none;border:0;font:400 clamp(16px,4.4vw,22px) Arial;min-height:0;margin-top:14px;color:#444}
+.inv-code{font-size:clamp(44px,14vw,84px);line-height:1.1}
+.inv-link{font-size:clamp(13px,3.6vw,20px);word-break:break-all;text-align:center}
+.inv-btns{display:flex;gap:16px;margin:14px 0}
+.inv-btns button{font:400 clamp(18px,5vw,28px) monospace;letter-spacing:4px;border:2px solid #222;border-radius:6px;min-width:130px;padding:10px 18px}
+.inv-btns .share{background:#a5a5a5}
+.how{width:100%;max-width:560px;border:2px solid #222;border-radius:14px;padding:8px 14px 12px;font-size:clamp(13px,3.6vw,18px);line-height:1.4}
+.how h3{text-align:center;margin:0 0 8px;font:400 clamp(16px,4.4vw,24px) monospace;letter-spacing:4px}
+.how p{margin:2px 0}
+.modal{position:absolute;inset:0;z-index:7;background:#ffffffe6;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4%;gap:18px}
+.mbox{width:100%;max-width:560px;border:5px solid #555;background:#fff;padding:14px;text-align:center;color:#444}
+.mbox h2{margin:0 0 10px;font:400 clamp(24px,7vw,38px) monospace;letter-spacing:6px}
+.mbox p{margin:6px 0 12px;font-size:clamp(12px,3.4vw,19px)}
+.ads-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px}
+.ad-dot{aspect-ratio:1;border:1.5px solid #333;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:clamp(13px,3.6vw,22px)}
+.ad-dot.done{font-size:clamp(24px,7vw,40px);color:#4a6b7c}
+#watchAdBtn{border:5px solid #555;font:400 clamp(15px,4.4vw,26px) Arial;padding:14px 20px}
+.mclose{border:3px solid #444;font-size:clamp(16px,4vw,22px);padding:12px 24px}
+.set-line{width:70%;margin:0 auto 10px;border-top:3px solid #111}
+.set-row{display:block;width:100%;border:0;background:none;font:400 clamp(20px,6vw,34px) monospace;letter-spacing:4px;padding:14px 0;color:#444}
+.set-row u{font-weight:700}
+#overOverlay{position:fixed;inset:0;z-index:4;background:#fff}
+#overOverlay .panel{background:none}
+#overOverlay h1{font-size:clamp(26px,8vw,44px);letter-spacing:10px}
+#overOverlay p{font-size:clamp(20px,6vw,32px);margin:22px 0 4px}
+.go-btn{display:block;width:min(76vw,380px);height:clamp(64px,9vh,88px);margin:18px auto 0;background:#a5a5a5;border:2px solid #111;border-radius:10px;font:400 clamp(20px,6vw,32px) monospace;letter-spacing:5px;color:#444}
+.go-home{display:block;margin:22px auto 0;border:0;background:none;font:400 16px monospace;letter-spacing:4px;color:#777;min-height:0}
+#gameScreen{touch-action:none}
+#infoText{white-space:pre-line;text-align:left;max-height:55vh;overflow:auto}
+.fld{display:block;width:100%;margin:8px 0;padding:12px;border:2px solid #555;font:400 clamp(15px,4.2vw,20px) Arial,sans-serif}
+.wd-err{color:#c00;font-size:14px;min-height:18px;margin:4px 0}
+#tgOnly{position:fixed;inset:0;z-index:20;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;font:400 clamp(18px,5vw,26px) monospace;color:#444}
+</style>
+</head>
+<body>
+<div id="app">
+  <section class="home" id="homeScreen">
+    <div class="home-top">
+      <div>HI: <span id="userName">USER NAME</span></div>
+      <div class="home-wallet" id="walletOpen">GAMES WALLET<br>₹<span id="walletAmount">00</span></div>
+    </div>
+    <div class="home-center"><div class="home-rabbit">∩∩</div><div class="home-title">RUN for EARN</div></div>
+    <div class="home-menu">
+      <button id="homePlay">PLAY</button><button id="leaderboardBtn">LEADERBOARD</button>
+      <button id="inviteBtn">INVITE FRIENDS</button><button id="blockAdsBtn">BLOCK ADS</button>
+    </div>
+    <div class="home-terms" id="termsBtn">Terms and Conditions</div>
+    <button class="home-settings" id="settingsBtn" aria-label="Settings">⚙️</button>
+  </section>
+  <section class="wallet hidden" id="walletScreen">
+    <div class="wallet-bar"><button class="wallet-back" id="walletBack" aria-label="Back">&lt;</button><h2>GAMES WALLET</h2></div>
+    <svg class="wallet-coins" width="150" height="130" viewBox="0 0 150 130" aria-hidden="true"><g fill="#fff" stroke="#333" stroke-width="2"><path d="M10 52v12c0 7 25 12 50 12s50-5 50-12V52" fill="#555"/><ellipse cx="60" cy="52" rx="50" ry="12"/><path d="M10 72v12c0 7 25 12 50 12s50-5 50-12V72" fill="#555"/><ellipse cx="60" cy="72" rx="50" ry="12"/><path d="M10 92v12c0 7 25 12 50 12s50-5 50-12V92" fill="#555"/><ellipse cx="60" cy="92" rx="50" ry="12"/><circle cx="100" cy="42" r="32"/><circle cx="100" cy="42" r="25"/></g><text x="100" y="54" text-anchor="middle" font-size="34" font-family="Arial" fill="#333">₹</text></svg>
+    <div class="wallet-lbl">AVAILABLE TO WITHDRAW</div>
+    <div class="wallet-big">₹ <span id="wBig">0.00</span></div>
+    <div class="wallet-box">
+      <div class="wallet-grid">
+        <div class="wallet-cell">AVAILABLE<b>₹<span id="wAvail">0.00</span></b></div>
+        <div class="wallet-cell">PENDING WITHDRAWAL<b class="y">₹<span id="wPend">0.00</span></b></div>
+        <div class="wallet-cell">TOTAL EARNED<b class="r">₹<span id="wEarn">0.00</span></b></div>
+        <div class="wallet-cell">TOTAL WITHDRAWN<b>₹<span id="wDraw">0.00</span></b></div>
+      </div>
+      <button id="withdrawBtn">WITHDRAW</button>
+      <div class="wallet-note">Minimum withdrawal : ₹<span id="minWd">200</span> , Bank only</div>
+    </div>
+    <div class="wallet-hist"><h3>TRANSACTION HISTORY</h3><div id="walletHist"><div class="empty">No transactions yet</div></div></div>
+    <button class="wallet-rules" id="walletRules">RULES</button>
+  </section>
+  <section class="wallet hidden" id="lbScreen">
+    <div class="wallet-bar"><button class="wallet-back" data-back="lbScreen" aria-label="Back">&lt;</button><h2>LEADERBOARD</h2></div><div class="sc-line"></div>
+    <div class="podium"><div class="pd2">2<b id="pz2">₹100</b></div><div class="pd1">1<b id="pz1">₹200</b></div><div class="pd3">3<b id="pz3">₹50</b></div></div>
+    <div class="row-box" style="margin-top:16px"><span>your rank</span><span id="lbRank">#0</span><span><span id="lbScore">00000</span> score</span></div>
+    <div class="lb-note">TOP 5 WIN PRIZES , DAILY LEADERBOARD START IN 00:00 AM TO 12:00 PM</div>
+    <div id="lbRows" style="width:100%;max-width:560px"></div>
+    <button class="link-btn" id="lbTerms">terms and conditions</button>
+  </section>
+  <section class="wallet hidden" id="invScreen">
+    <div class="wallet-bar"><button class="wallet-back" data-back="invScreen" aria-label="Back">&lt;</button><h2>INVITE FRIENDS</h2></div><div class="sc-line"></div>
+    <div style="font-size:clamp(18px,5vw,28px)">your invite code</div>
+    <div class="inv-code" id="invCode">------</div>
+    <div class="inv-link" id="invLink"></div>
+    <div class="inv-btns"><button id="invCopy">COPY</button><button class="share" id="invShare">SHARE</button></div>
+    <div class="sc-line"></div>
+    <div class="how"><h3>HOW IT WORKS</h3><p>• Share your link with friends. Your code is inside the link.</p><p>• When a friend signs up with your link and wins prize money, you get <span id="refPct">5</span>% of their winnings, for life.</p><p>• Your commission goes to your wallet automatically.</p></div>
+    <div style="width:100%;max-width:560px;font-size:clamp(16px,4.6vw,26px);margin:16px 0 8px">Friends you referred (<span id="invCount">0</span>) • earned ₹<span id="invEarn">0</span></div>
+    <div id="invList" style="width:100%;max-width:560px"><div class="row-box" style="color:#999">No friends yet</div></div>
+  </section>
+  <div class="modal hidden" id="adsModal"><div class="mbox"><h2>BLOCK ADS</h2><p>WATCH 10 ADS TO GET AD FREE TODAY MIDNIGHT</p><div class="ads-grid" id="adsGrid"></div><button id="watchAdBtn">WATCH AD (00/10)</button></div><button class="mclose" data-close="adsModal">CLOSE</button></div>
+  <div class="modal hidden" id="setModal"><div class="mbox"><h2>SETTINGS</h2><div class="set-line"></div><button class="set-row" id="soundBtn">SOUND : <span id="soundTxt"></span></button><button class="set-row" id="logoutBtn">LOG OUT</button></div><button class="mclose" data-close="setModal">CLOSE</button></div>
+  <div class="modal hidden" id="wdModal"><div class="mbox"><h2>WITHDRAW</h2><p id="wdBal"></p>
+    <input class="fld" id="wdName" placeholder="Account holder name" autocomplete="off">
+    <input class="fld" id="wdAcc" placeholder="Bank account number" inputmode="numeric" autocomplete="off">
+    <input class="fld" id="wdIfsc" placeholder="IFSC code" autocapitalize="characters" autocomplete="off">
+    <input class="fld" id="wdAmt" placeholder="Amount (₹)" inputmode="decimal" autocomplete="off">
+    <div class="wd-err" id="wdErr"></div><button id="wdSubmit">SEND REQUEST</button></div><button class="mclose" data-close="wdModal">CANCEL</button></div>
+  <div id="tgOnly" class="hidden"><div>RUN for EARN</div><div>Please open this game inside Telegram.</div><button class="go-btn" onclick="location.href='https://t.me/run_for_earn_bot'">OPEN TELEGRAM</button></div>
+  <div class="home-info hidden" id="homeInfo"><div class="info-card"><h2 id="infoTitle">LEADERBOARD</h2><p id="infoText">Coming soon</p><button id="infoClose">CLOSE</button></div></div>
+  <div id="gameScreen" class="hidden">
+  <header>
+    <div class="brand">BUNNY RUNNER</div>
+    <div class="pill">HI <b id="best">00000</b></div>
+    <div class="pill"><b id="score">00000</b></div>
+  </header>
+  <main id="gameArea">
+    <canvas id="game"></canvas>
+    <div class="overlay hidden" id="startOverlay">
+      <div class="panel">
+        <div class="rabbit-mark">ᕱᕱ</div>
+        <h1>TAP THE RABBIT</h1>
+        <p>Tap the rabbit to play</p>
+        <button id="startBtn">START</button>
+      </div>
+    </div>
+    <div class="overlay hidden" id="overOverlay">
+      <div class="panel">
+        <div class="rabbit-mark">× ×</div>
+        <h1>GAME OVER</h1>
+        <p>score : <b id="finalScore">0</b></p>
+        <span id="finalBest" hidden></span>
+        <button class="go-btn" id="againBtn">PLAY AGAIN</button>
+        <button class="go-btn" id="goLbBtn">LEADERBOARD</button>
+        <button class="go-home" id="goHomeBtn">HOME</button>
+      </div>
+    </div>
+  </main>
+  </div>
+</div>
+<script>
+(() => {
+'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const area=document.getElementById('gameArea');
+const scoreEl=document.getElementById('score'),bestEl=document.getElementById('best');
+const startOverlay=document.getElementById('startOverlay'),overOverlay=document.getElementById('overOverlay');
+const finalScore=document.getElementById('finalScore'),finalBest=document.getElementById('finalBest');
+let W=900,H=440,dpr=1,ground=350,last=0,raf=0;
+let running=false,over=false,score=0,best=Number(localStorage.getItem('bunnyRushBest')||0),worldTime=0;
+let speed=330,spawn=0,obstacles=[],clouds=[],particles=[],day=0;
+const bunny={x:115,y:0,vy:0,jumping:false,duck:false,duckUntil:0,run:0};
+bestEl.textContent=String(best).padStart(5,'0');
+function resize(){
+ const r=area.getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,2);
+ W=Math.max(320,r.width);H=Math.max(240,r.height);
+ canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
+ ctx.setTransform(dpr,0,0,dpr,0,0);ground=H*.79;
+ bunny.y=ground;
+}
+new ResizeObserver(resize).observe(area);resize();
+function roundedRect(x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+function drawBackground(dt){
+ worldTime+=dt;
+ ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+ // faint pixel clouds
+ ctx.fillStyle='#e6e6e6';
+ for(let i=0;i<3;i++){
+   let x=((i*W*.38-worldTime*(running?18:0))%(W+100)+W+100)%(W+100)-40;
+   let y=H*(.20+(i%2)*.12);
+   ctx.fillRect(x,y,38,4);ctx.fillRect(x+6,y-5,25,5);ctx.fillRect(x+13,y-9,15,4);ctx.fillRect(x+32,y-2,7,4);
+ }
+ // Chrome-dino-like ground and scattered pixel marks
+ ctx.fillStyle='#777';ctx.fillRect(0,ground,W,2);
+ ctx.fillStyle='#aaa';
+ for(let i=0;i<28;i++){
+   let x=(i*53-(running?score*3:0))%(W+20);if(x<0)x+=W+20;
+   ctx.fillRect(x,ground+8+(i%3)*5,4+(i%4)*2,2);
+ }
+}
+function drawBunny(){
+ const x=Math.round(bunny.x),y=Math.round(bunny.y);
+ const px=4, frame=Math.floor(bunny.run*10)%2;
+ ctx.save();ctx.translate(x,y);ctx.fillStyle='#333';
+ // Pixel-art rabbit silhouette, drawn on a 4px grid.
+ if(bunny.duck){
+   // low running/ducking pose
+   ctx.fillRect(-28,-24,44,16);ctx.fillRect(10,-32,20,20);
+   ctx.fillRect(14,-48,5,18);ctx.fillRect(23,-44,5,15);
+   ctx.fillRect(-35,-22,9,9);ctx.fillRect(-17,-9,11,6);ctx.fillRect(7,-9,11,6);
+   ctx.fillStyle='#fff';ctx.fillRect(24,-25,4,4);
+ }else{
+   // round body and fluffy tail
+   ctx.fillRect(-24,-36,36,24);ctx.fillRect(-28,-32,8,12);
+   ctx.fillRect(-34,-31,8,8);ctx.fillRect(-30,-38,8,8);
+   // head and muzzle
+   ctx.fillRect(2,-54,25,24);ctx.fillRect(18,-46,13,12);ctx.fillRect(25,-40,7,6);
+   // two long ears, slightly different angles
+   ctx.fillRect(5,-82,8,30);ctx.fillRect(17,-78,8,26);
+   ctx.fillRect(1,-86,8,8);ctx.fillRect(17,-82,8,8);
+   // feet animate while running; tuck them in the air
+   if(bunny.jumping){
+     ctx.fillRect(-17,-12,13,8);ctx.fillRect(2,-12,13,8);
+   }else if(frame===0){
+     ctx.fillRect(-19,-14,9,14);ctx.fillRect(3,-14,9,14);
+   }else{
+     ctx.fillRect(-25,-12,13,8);ctx.fillRect(7,-12,13,8);
+   }
+   // eye and tiny nose
+   ctx.fillStyle='#fff';ctx.fillRect(20,-47,5,5);
+   ctx.fillStyle='#333';ctx.fillRect(22,-46,3,3);ctx.fillRect(30,-39,3,3);
+ }
+ ctx.restore();
+}
+function drawObstacle(o){
+ ctx.save();ctx.translate(Math.round(o.x),Math.round(o.y));ctx.fillStyle='#555';
+ if(o.type==='log'){
+   ctx.fillRect(-23,-15,46,15);ctx.fillRect(-18,-20,36,5);ctx.fillStyle='#888';ctx.fillRect(-12,-12,4,4);
+ }else if(o.type==='bird'){
+   let flap=Math.sin(o.flap)>0?1:-1;
+   ctx.fillRect(-14,-2,28,4);ctx.fillRect(-8,flap>0?-10:2,5,10);ctx.fillRect(4,flap>0?-10:2,5,10);
+ }else{
+   ctx.fillRect(-12,-42,10,42);ctx.fillRect(2,-31,10,31);ctx.fillRect(-20,-29,8,7);ctx.fillRect(10,-23,8,7);
+ }
+ ctx.restore();
+}
+function draw(){
+ ctx.clearRect(0,0,W,H);drawBackground(running?1/60:0);
+ for(const o of obstacles)drawObstacle(o);
+ drawBunny();
+}
+function start(){
+ track();
+ document.getElementById('homeScreen').classList.add('hidden');
+ document.getElementById('homeInfo').classList.add('hidden');
+ document.getElementById('gameScreen').classList.remove('hidden');
+ requestAnimationFrame(()=>{resize();cancelAnimationFrame(raf);running=true;over=false;score=0;speed=330;spawn=.8;obstacles=[];particles=[];
+ bunny.y=ground;bunny.vy=0;bunny.jumping=false;bunny.duck=false;bunny.run=0;
+ startOverlay.classList.add('hidden');overOverlay.classList.add('hidden');
+ last=performance.now();draw();raf=requestAnimationFrame(loop);});
+}
+function end(){
+ running=false;over=true;best=Math.max(best,Math.floor(score));
+ localStorage.setItem('bunnyRushBest',String(best));bestEl.textContent=String(best).padStart(5,'0');
+ finalScore.textContent=String(Math.floor(score)).padStart(5,'0');finalBest.textContent=String(best).padStart(5,'0');
+ overOverlay.classList.remove('hidden');submitScore(Math.floor(score));beep(160,.35,'sawtooth');maybeInterstitial();
+}
+function jump(){if(!running||bunny.jumping||bunny.duck)return;bunny.vy=-690;bunny.jumping=true;beep(660,.08)}
+function duck(down){if(!running)return;bunny.duck=down;if(down)bunny.duckUntil=performance.now()+500}
+function loop(now){
+ if(!running)return;let dt=Math.min((now-last)/1000,.035);last=now;
+ score+=dt*speed*.055;speed=Math.min(690,speed+dt*5.2);
+ bunny.run+=dt;bunny.vy+=1850*dt;bunny.y+=bunny.vy*dt;
+ if(bunny.y>=ground){bunny.y=ground;bunny.vy=0;bunny.jumping=false}
+ if(bunny.duck&&now>bunny.duckUntil)bunny.duck=false;
+ spawn-=dt;
+ if(spawn<=0){
+   const type=Math.random()<.27?'bird':(Math.random()<.5?'log':'cactus');
+   obstacles.push({x:W+45,y:type==='bird'?ground-83:ground,type,flap:0});
+   spawn=Math.max(.78,1.45-Math.min(speed,650)/900)+Math.random()*.65;
+ }
+ for(const o of obstacles){o.x-=speed*dt;o.flap+=dt*12}
+ obstacles=obstacles.filter(o=>o.x>-70);
+ for(const o of obstacles){
+   const dx=Math.abs(o.x-bunny.x), bunnyBottom=bunny.y-(bunny.duck?16:0);
+   if(dx<31){
+     if(o.type==='bird'){if(!bunny.duck&&!bunny.jumping&&bunny.y>ground-25) return end()}
+     else if(!bunny.jumping || bunny.y>ground-48) return end();
+   }
+ }
+ scoreEl.textContent=String(Math.floor(score)).padStart(5,'0');
+ draw();raf=requestAnimationFrame(loop);
+}
+document.getElementById('startBtn').addEventListener('click',start);
+startOverlay.addEventListener('pointerdown',e=>{if(e.target===startOverlay)start()});
+document.getElementById('againBtn').addEventListener('click',start);
+document.getElementById('goHomeBtn').addEventListener('click',()=>{running=false;overOverlay.classList.add('hidden');document.getElementById('gameScreen').classList.add('hidden');document.getElementById('homeScreen').classList.remove('hidden')});
+const info=document.getElementById('homeInfo');
+function showInfo(title,message){document.getElementById('infoTitle').textContent=title;document.getElementById('infoText').textContent=message;info.classList.remove('hidden')}
+document.getElementById('infoClose').addEventListener('click',()=>info.classList.add('hidden'));
+document.getElementById('homePlay').addEventListener('click',start);
+window.addEventListener('keydown',e=>{
+ if(['Space','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();
+ if(e.code==='Space'||e.code==='ArrowUp')jump();
+});
+const wallet={available:0,pending:0,earned:0,withdrawn:0,history:[]};
+const $=id=>document.getElementById(id),fmt=n=>Number(n).toFixed(2);
+function renderWallet(){
+ $('wBig').textContent=$('wAvail').textContent=fmt(wallet.available);
+ $('wPend').textContent=fmt(wallet.pending);$('wEarn').textContent=fmt(wallet.earned);$('wDraw').textContent=fmt(wallet.withdrawn);
+ $('walletAmount').textContent=Math.floor(wallet.available);
+ $('walletHist').innerHTML=wallet.history.length?wallet.history.map(t=>'<div class="row"><span>'+esc(t.label)+'</span><b>'+(t.amount?(t.amount<0?'-':'+')+'₹'+fmt(Math.abs(t.amount)):'')+'</b></div>').join(''):'<div class="empty">No transactions yet</div>';
+}
+$('walletOpen').addEventListener('click',()=>{renderWallet();$('walletScreen').classList.remove('hidden')});
+$('walletBack').addEventListener('click',()=>$('walletScreen').classList.add('hidden'));
+const store={get:(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v===null||v===undefined?d:v}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const open=id=>$(id).classList.remove('hidden'),shut=id=>$(id).classList.add('hidden');
+document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click',()=>shut(b.dataset.back)));
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>shut(b.dataset.close)));
+// Leaderboard
+let PRIZES=[200,100,50,30,20];
+$('lbTerms').addEventListener('click',()=>$('termsBtn').click());
+// Invite friends
+const BOT='https://t.me/run_for_earn_bot';
+let code=store.get('rfeCode',null);
+if(!code){code=Math.random().toString(36).slice(2,8).toUpperCase();store.set('rfeCode',code)}
+let inviteLink=BOT+'?startapp='+code;const inviteText='Join me in Run for Earn!';
+$('invCode').textContent=code;$('invLink').textContent=inviteLink;
+async function copyText(t){try{await navigator.clipboard.writeText(t);return true}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}a.remove();return ok}}
+$('inviteBtn').addEventListener('click',()=>open('invScreen'));
+$('invCopy').addEventListener('click',async()=>{const b=$('invCopy');b.textContent=(await copyText(inviteLink))?'COPIED':'FAILED';setTimeout(()=>b.textContent='COPY',1500)});
+$('invShare').addEventListener('click',async()=>{
+ const tg=window.Telegram?.WebApp;
+ if(tg&&tg.openTelegramLink){tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(inviteLink)+'&text='+encodeURIComponent(inviteText));return}
+ try{if(navigator.share){await navigator.share({title:'Run for Earn',text:inviteText,url:inviteLink});return}}catch(e){return}
+ const b=$('invShare');b.textContent=(await copyText(inviteText+' '+inviteLink))?'COPIED':'FAILED';setTimeout(()=>b.textContent='SHARE',1500);
+});
+// Block ads
+const today=()=>new Date().toDateString();
+const adState=()=>{const s=store.get('rfeAds',null);return s&&s.d===today()?s:{d:today(),n:0}};
+function renderAds(){
+ const n=adState().n,b=$('watchAdBtn');
+ $('adsGrid').innerHTML=Array.from({length:10},(_,i)=>i<n?'<div class="ad-dot done">✔</div>':'<div class="ad-dot">ads '+(i+1)+'</div>').join('');
+ b.disabled=n>=10;b.textContent=n>=10?'AD FREE ACTIVE':'WATCH AD ('+String(n).padStart(2,'0')+'/10)';
+}
+$('blockAdsBtn').addEventListener('click',()=>{renderAds();open('adsModal')});
+// Settings
+function renderSound(){$('soundTxt').innerHTML=store.get('rfeSound',true)?'OFF/<u>ON</u>':'<u>OFF</u>/ON'}
+$('settingsBtn').addEventListener('click',()=>{renderSound();open('setModal')});
+$('soundBtn').addEventListener('click',()=>{store.set('rfeSound',!store.get('rfeSound',true));renderSound()});
+// ---- Server connection: Telegram login + Firestore (via /api/rfe) ----
+const BOT_USER='run_for_earn_bot'; // your bot username (no @)
+const tg=window.Telegram&&window.Telegram.WebApp,initData=(tg&&tg.initData)||'';
+if(tg){try{tg.ready();tg.expand()}catch(e){}}
+let online=false;
+const esc=t=>String(t).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+async function api(action,data){
+ const r=await fetch('/api/rfe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({action,initData},data||{}))});
+ const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||r.status);return j;
+}
+function track(){if(online)api('start').catch(()=>{})}
+async function submitScore(sc){if(!online)return;try{const r=await api('score',{score:sc});best=Math.max(best,r.best);bestEl.textContent=String(best).padStart(5,'0')}catch(e){}}
+function applyMe(m){
+ online=true;applyCfg(m.cfg);$('userName').textContent=m.name;
+ Object.assign(wallet,m.wallet);wallet.history=m.history||[];
+ best=Math.max(best,m.best||0);bestEl.textContent=String(best).padStart(5,'0');
+ code=m.code;inviteLink='https://t.me/'+BOT_USER+'?startapp='+code;
+ $('invCode').textContent=code;$('invLink').textContent=inviteLink;
+ $('invCount').textContent=m.refs.count;$('invEarn').textContent=m.refs.earned;
+ $('invList').innerHTML=m.refs.list.length?m.refs.list.map(f=>'<div class="row-box"><span>'+esc(f.name)+'</span><span>₹'+f.earned+'</span></div>').join(''):'<div class="row-box" style="color:#999">No friends yet</div>';
+ renderWallet();
+}
+const lbHtml=rows=>PRIZES.map((p,i)=>{const r=rows[i];return '<div class="row-box"><span>#'+(i+1)+' '+(r?esc(r.name):'—')+'</span><span>'+(r?r.score+' score':'')+'</span><span>₹'+p+'</span></div>'}).join('');
+$('leaderboardBtn').addEventListener('click',async()=>{
+ $('lbScore').textContent=String(Math.floor(best)).padStart(5,'0');
+ $('lbRows').innerHTML=lbHtml([]);open('lbScreen');
+ if(!online)return;
+ try{const b=await api('board');applyCfg({prizes:b.prizes});$('lbRows').innerHTML=lbHtml(b.top);$('lbRank').textContent='#'+b.rank;$('lbScore').textContent=String(b.score).padStart(5,'0')}catch(e){}
+});
+if(!initData)$('tgOnly').classList.remove('hidden');
+else api('me').then(applyMe).catch(e=>showInfo('ERROR',e.message||'Could not connect. Please reopen the app.'));
+$('gameScreen').addEventListener('pointerdown',()=>{if(running)jump()}); // tap anywhere = jump
+$('goLbBtn').addEventListener('click',()=>$('leaderboardBtn').click());
+// ---- Live config, withdrawals, ads, sound ----
+const cfg={prizes:PRIZES,minWithdraw:200,refRate:.05};
+function applyCfg(c){
+ if(c)Object.assign(cfg,c);PRIZES=cfg.prizes;
+ [1,2,3].forEach(i=>$('pz'+i).textContent='₹'+PRIZES[i-1]);
+ $('minWd').textContent=cfg.minWithdraw;$('refPct').textContent=+(cfg.refRate*100).toFixed(2);
+}
+const TERMS=()=>'• Only your highest score of the day counts on the daily leaderboard (IST, 12:00 AM - 11:59 PM).\n• Top 5 win prizes: '+PRIZES.map((p,i)=>'#'+(i+1)+' ₹'+p).join(', ')+'.\n• Prizes are added to your wallet after the day ends.\n• Invite friends and earn '+(+(cfg.refRate*100).toFixed(2))+'% of their prize winnings.\n• Minimum withdrawal ₹'+cfg.minWithdraw+', bank transfer only. Requests are reviewed and paid manually.\n• Cheating, bots, and fake or duplicate accounts lead to a permanent ban and cancelled winnings.\n• Prizes and rules may be changed by the admin at any time.';
+$('termsBtn').addEventListener('click',()=>showInfo('TERMS AND CONDITIONS',TERMS()));
+$('walletRules').addEventListener('click',()=>showInfo('RULES',TERMS()));
+$('withdrawBtn').addEventListener('click',()=>{
+ if(wallet.pending>0)return showInfo('WITHDRAW','You already have a pending withdrawal. Please wait until it is paid.');
+ if(wallet.available<cfg.minWithdraw)return showInfo('WITHDRAW','Minimum withdrawal is ₹'+cfg.minWithdraw+'. Your available balance is ₹'+fmt(wallet.available)+'.');
+ $('wdBal').textContent='Available: ₹'+fmt(wallet.available);$('wdAmt').value=Math.floor(wallet.available);$('wdErr').textContent='';open('wdModal');
+});
+$('wdSubmit').addEventListener('click',async()=>{
+ const b=$('wdSubmit');b.disabled=true;$('wdErr').textContent='';
+ try{
+  await api('withdraw',{name:$('wdName').value,acc:$('wdAcc').value,ifsc:$('wdIfsc').value,amount:$('wdAmt').value});
+  applyMe(await api('me'));shut('wdModal');
+  showInfo('REQUEST SENT','Your withdrawal request is pending. It will be paid to your bank account after review.');
+ }catch(e){$('wdErr').textContent=e.message}
+ b.disabled=false;
+});
+// Ads (Adsgram: create your blocks at adsgram.ai and paste the block IDs here)
+const AD_REWARD_ID='',AD_INTER_ID='';
+async function showRewardedAd(){
+ if(!window.Adsgram||!AD_REWARD_ID)throw new Error('ADS NOT AVAILABLE');
+ const r=await window.Adsgram.init({blockId:AD_REWARD_ID}).show();
+ if(!r||!r.done)throw new Error('WATCH THE FULL AD');
+}
+$('watchAdBtn').addEventListener('click',async()=>{
+ const b=$('watchAdBtn');b.disabled=true;b.textContent='LOADING AD...';
+ try{await showRewardedAd();const s=adState();s.n=Math.min(10,s.n+1);store.set('rfeAds',s);renderAds()}
+ catch(e){b.textContent=(e&&e.message)||'AD NOT AVAILABLE';setTimeout(renderAds,2000)}
+});
+let gamesPlayed=0;
+function maybeInterstitial(){if(adState().n>=10||!window.Adsgram||!AD_INTER_ID||++gamesPlayed%3)return;try{window.Adsgram.init({blockId:AD_INTER_ID}).show().catch(()=>{})}catch(e){}}
+// Sound
+let AC=null;
+function beep(f,d,ty){if(!store.get('rfeSound',true))return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=ty||'square';o.frequency.value=f;g.gain.value=.04;o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+$('logoutBtn').addEventListener('click',()=>{if(tg&&tg.close)tg.close();else location.reload()});
+renderWallet();
+draw();
+})();
+</script>
+</body>
+</html>
