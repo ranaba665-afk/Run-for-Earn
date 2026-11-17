@@ -3,10 +3,11 @@ const APP = process.env.APP_URL || 'https://runforearn.vercel.app', BOT = 'run_f
 const send = (chat_id, text, extra) => fetch('https://api.telegram.org/bot' + process.env.BOT_TOKEN + '/sendMessage', {
   method: 'POST', headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(Object.assign({ chat_id, text, parse_mode: 'HTML' }, extra))
-});
+}).then(async r => { if (!r.ok) console.error('sendMessage failed', r.status, await r.text()); });
 module.exports = async (req, res) => {
   try {
-    if (req.method !== 'POST' || !process.env.WEBHOOK_SECRET || req.headers['x-telegram-bot-api-secret-token'] !== process.env.WEBHOOK_SECRET) return res.status(401).end();
+    if (!process.env.WEBHOOK_SECRET) return res.status(401).json({ error: 'WEBHOOK_SECRET is not set on the server' });
+    if (req.method !== 'POST' || req.headers['x-telegram-bot-api-secret-token'] !== process.env.WEBHOOK_SECRET) return res.status(401).json({ error: 'secret mismatch' });
     const m = (req.body || {}).message;
     if (m && m.chat && m.chat.type === 'private') {
       const parts = String(m.text || '').trim().split(/\s+/), cmd = parts[0].split('@')[0].toLowerCase(), arg = parts[1] || '';
