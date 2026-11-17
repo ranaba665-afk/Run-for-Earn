@@ -1,10 +1,11 @@
 // Admin API: protected by the ADMIN_KEY environment variable (min 16 chars).
 const crypto = require('crypto');
-const { db, FV, day, ue, getConfig, settle } = require('./_lib');
+const { db, FV, day, ue, getConfig, settle, initError } = require('./_lib');
 const ok = k => { const a = Buffer.from(String(k || '')), b = Buffer.from(process.env.ADMIN_KEY || ''); return b.length >= 16 && a.length === b.length && crypto.timingSafeEqual(a, b); };
 const U = id => db.collection('users').doc(String(id)), isDate = d => /^\d{4}-\d{2}-\d{2}$/.test(d);
 module.exports = async (req, res) => {
   try {
+    if (initError) return res.status(500).json({ error: 'Setup error: ' + initError });
     if (req.method !== 'POST') return res.status(405).end();
     if (!ok(req.headers['x-admin-key'])) { await new Promise(r => setTimeout(r, 1500)); return res.status(401).json({ error: 'Wrong key' }); }
     const b = req.body || {};
