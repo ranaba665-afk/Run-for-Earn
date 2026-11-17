@@ -1,0 +1,1 @@
+{ "name": "run-for-earn", "private": true, "dependencies": { "firebase-admin": "12.7.0" } }
