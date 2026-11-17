@@ -1,7 +1,13 @@
 // Shared helpers (files starting with "_" are not exposed as API routes)
 const crypto = require('crypto'), admin = require('firebase-admin');
-if (!admin.apps.length) admin.initializeApp({ credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
-const db = admin.firestore(), FV = admin.firestore.FieldValue;
+let initError = null; // shown to the app as a clear setup message instead of a blank 500
+try {
+  if (!process.env.BOT_TOKEN) throw 'BOT_TOKEN is missing in Vercel environment variables';
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT) throw 'FIREBASE_SERVICE_ACCOUNT is missing in Vercel environment variables';
+  let sa; try { sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT); } catch (e) { throw 'FIREBASE_SERVICE_ACCOUNT is not valid JSON (paste the whole downloaded file)'; }
+  if (!admin.apps.length) admin.initializeApp({ credential: admin.credential.cert(sa) });
+} catch (e) { initError = typeof e === 'string' ? e : 'Firebase setup failed (check the service account JSON)'; }
+const db = initError ? null : admin.firestore(), FV = admin.firestore.FieldValue;
 const DEF = { prizes: [200, 100, 50, 30, 20], refRate: 0.05, minWithdraw: 200 };
 const day = (back = 0) => new Date(Date.now() + 19800000 - back * 86400000).toISOString().slice(0, 10); // IST date
 const ue = m => Object.assign(new Error(m), { user: true }); // error safe to show to users
@@ -48,4 +54,4 @@ async function settle(date) {
     return { settled: true, winners: win.length };
   });
 }
-module.exports = { db, FV, day, ue, getConfig, verify, settle };
+module.exports = { db, FV, day, ue, getConfig, verify, settle, initError };
