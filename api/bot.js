@@ -13,9 +13,9 @@ module.exports = async (req, res) => {
       if (cmd === '/getid') await send(m.chat.id, 'Your Telegram ID: <code>' + m.from.id + '</code>');
       else {
         const ref = cmd === '/start' && /^[A-Za-z0-9]{1,12}$/.test(arg) ? 'https://t.me/' + BOT + '?startapp=' + arg.toUpperCase() : null; // old-style invite links
-        await send(m.chat.id, '🐰 <b>RUN for EARN</b>\nRun, score high and win daily prizes!', {
-          reply_markup: { inline_keyboard: [[ref ? { text: '▶ PLAY', url: ref } : { text: '▶ PLAY', web_app: { url: APP } }]] }
-        });
+        const rows = [[ref ? { text: '🐰 RUN for EARN 🐰', url: ref } : { text: '🐰 RUN for EARN 🐰', web_app: { url: APP } }]];
+        if (process.env.CHANNEL_URL) rows.push([{ text: 'Join our official channel', url: process.env.CHANNEL_URL }]);
+        await send(m.chat.id, '<b>Welcome to RUN for EARN! 🐰</b>\n\nRun, jump and beat your high score. The top 5 players win real prizes every day.\n\nInvite friends and earn a commission on their winnings 🚀', { reply_markup: { inline_keyboard: rows } });
       }
     }
     res.status(200).json({ ok: true });
