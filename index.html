@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#ffffff">
 <title>Run for Earn</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+<script src='//libtl.com/sdk.js' data-zone='12288618' data-sdk='show_12288618'></script>
 <style>
 :root{--ink:#333;--muted:#777}
 *{box-sizing:border-box}
@@ -311,7 +311,7 @@ function end(){
  running=false;over=true;rollover();best=Math.max(best,Math.floor(score));
  bestEl.textContent=String(best).padStart(5,'0');
  finalScore.textContent=String(Math.floor(score)).padStart(5,'0');finalBest.textContent=String(best).padStart(5,'0');
- overOverlay.classList.remove('hidden');submitScore(Math.floor(score),coinCount);beep(160,.35,'sawtooth');maybeInterstitial();
+ overOverlay.classList.remove('hidden');submitScore(Math.floor(score),coinCount);beep(160,.35,'sawtooth');adBreak();
 }
 function jump(){if(!running||bunny.jumping||bunny.duck)return;bunny.vy=-690;bunny.jumping=true;beep(660,.08)}
 function duck(down){if(!running)return;bunny.duck=down;if(down)bunny.duckUntil=performance.now()+500}
@@ -364,7 +364,7 @@ function renderWallet(){
  $('walletAmount').textContent=Math.floor(wallet.available);
  $('walletHist').innerHTML=wallet.history.length?wallet.history.map(t=>'<div class="row"><span>'+esc(t.label)+'</span><b>'+(t.amount?(t.amount<0?'-':'+')+'₹'+fmt(Math.abs(t.amount)):'')+'</b></div>').join(''):'<div class="empty">No transactions yet</div>';
 }
-$('walletOpen').addEventListener('click',()=>{renderWallet();$('walletScreen').classList.remove('hidden')});
+$('walletOpen').addEventListener('click',()=>{adBreak();renderWallet();$('walletScreen').classList.remove('hidden')});
 $('walletBack').addEventListener('click',()=>$('walletScreen').classList.add('hidden'));
 const store={get:(k,d)=>{try{const v=JSON.parse(localStorage.getItem(k));return v===null||v===undefined?d:v}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 const open=id=>$(id).classList.remove('hidden'),shut=id=>$(id).classList.add('hidden');
@@ -380,7 +380,7 @@ if(!code){code=Math.random().toString(36).slice(2,8).toUpperCase();store.set('rf
 let inviteLink=BOT+'?startapp='+code;const inviteText='Join me in Run for Earn!';
 $('invCode').textContent=code;$('invLink').textContent=inviteLink;
 async function copyText(t){try{await navigator.clipboard.writeText(t);return true}catch(e){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();let ok=false;try{ok=document.execCommand('copy')}catch(_){}a.remove();return ok}}
-$('inviteBtn').addEventListener('click',()=>open('invScreen'));
+$('inviteBtn').addEventListener('click',()=>{adBreak();open('invScreen')});
 $('invCopy').addEventListener('click',async()=>{const b=$('invCopy');b.textContent=(await copyText(inviteLink))?'COPIED':'FAILED';setTimeout(()=>b.textContent='COPY',1500)});
 $('invShare').addEventListener('click',async()=>{
  const tg=window.Telegram?.WebApp;
@@ -425,6 +425,7 @@ function applyMe(m){
 }
 const lbHtml=rows=>PRIZES.map((p,i)=>{const r=rows[i];return '<div class="row-box"><span>#'+(i+1)+' '+(r?esc(r.name):'—')+'</span><span>'+(r?r.score+' score':'')+'</span><span>₹'+p+'</span></div>'}).join('');
 $('leaderboardBtn').addEventListener('click',async()=>{
+ adBreak();
  $('lbScore').textContent=String(Math.floor(best)).padStart(5,'0');
  $('lbRows').innerHTML=lbHtml([]);open('lbScreen');
  if(!online)return;
@@ -458,20 +459,24 @@ $('wdSubmit').addEventListener('click',async()=>{
  }catch(e){$('wdErr').textContent=e.message}
  b.disabled=false;
 });
-// Ads (Adsgram: create your blocks at adsgram.ai and paste the block IDs here)
-const AD_REWARD_ID='',AD_INTER_ID='';
+// Ads: Monetag (zone 12288618). Rewarded Interstitial is used for BLOCK ADS.
 async function showRewardedAd(){
- if(!window.Adsgram||!AD_REWARD_ID)throw new Error('ADS NOT AVAILABLE');
- const r=await window.Adsgram.init({blockId:AD_REWARD_ID}).show();
- if(!r||!r.done)throw new Error('WATCH THE FULL AD');
+ if(typeof show_12288618!=='function')throw new Error('ADS NOT AVAILABLE');
+ await show_12288618();
+}
+// In-App Interstitial (no reward) on game over and when opening Leaderboard / Wallet / Invite (skipped when ad-free today).
+// AD_GAP stops two ads from stacking right after each other.
+const AD_GAP=10000;let lastAd=0;
+function adBreak(){
+ if(!initData||typeof show_12288618!=='function'||adState().n>=10||Date.now()-lastAd<AD_GAP)return;
+ lastAd=Date.now();
+ try{Promise.resolve(show_12288618({type:'inApp',inAppSettings:{frequency:1,capping:0.003,interval:10,timeout:1,everyPage:true}})).catch(()=>{})}catch(e){}
 }
 $('watchAdBtn').addEventListener('click',async()=>{
  const b=$('watchAdBtn');b.disabled=true;b.textContent='LOADING AD...';
  try{await showRewardedAd();const s=adState();s.n=Math.min(10,s.n+1);store.set('rfeAds',s);renderAds()}
  catch(e){b.textContent=(e&&e.message)||'AD NOT AVAILABLE';setTimeout(renderAds,2000)}
 });
-let gamesPlayed=0;
-function maybeInterstitial(){if(adState().n>=10||!window.Adsgram||!AD_INTER_ID||++gamesPlayed%3)return;try{window.Adsgram.init({blockId:AD_INTER_ID}).show().catch(()=>{})}catch(e){}}
 // Sound
 let AC=null;
 function beep(f,d,ty){if(!store.get('rfeSound',true))return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=ty||'square';o.frequency.value=f;g.gain.value=.04;o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
