@@ -107,6 +107,17 @@ button:active{background:#eee}
 .wd-err{color:#c00;font-size:14px;min-height:18px;margin:4px 0}
 #tgOnly{position:fixed;inset:0;z-index:20;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;font:400 clamp(18px,5vw,26px) monospace;color:#444}
 .coin-i{display:inline-block;width:10px;height:10px;border:3px solid #555;border-radius:50%;vertical-align:-1px}
+/* Home screen: flowing layout so nothing overlaps on short or narrow screens */
+.home{overflow-y:auto;padding-bottom:56px}
+.home-top{flex:none}
+.home-top>div:first-child{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(14px,4.4vw,26px);letter-spacing:2px}
+.home-wallet{flex:none;min-width:0;white-space:nowrap}
+.home-center{position:static;flex:none;margin-top:clamp(6px,5vh,48px)}
+.home-rabbit{font-size:clamp(32px,8vw,64px)}
+.home-title{margin-top:clamp(6px,2vh,26px);font-size:clamp(30px,8vw,56px)}
+.home-menu{position:static;flex:none;width:min(78%,420px);margin:clamp(14px,4vh,40px) auto 0;gap:clamp(12px,3vh,34px)}
+.home-menu button{height:clamp(50px,7vh,80px)}
+.home-terms{position:static;flex:none;margin-top:auto;padding:16px 0 4px}
 </style>
 </head>
 <body>
