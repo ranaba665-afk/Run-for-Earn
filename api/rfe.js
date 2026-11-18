@@ -29,20 +29,21 @@ module.exports = async (req, res) => {
       const u = (await ref.get()).data();
       const tx = (await ref.collection('tx').orderBy('t', 'desc').limit(20).get()).docs.map(d => ({ label: d.data().label, amount: d.data().amount }));
       const fr = (await db.collection('users').where('referredBy', '==', uid).limit(50).get()).docs.map(d => ({ name: d.data().name, earned: d.data().refEarnedForReferrer || 0 }));
-      return res.json({ name, code: u.code, wallet: u.wallet, best: u.best || 0, history: tx, refs: { count: u.refCount || 0, earned: u.refEarned || 0, list: fr }, cfg });
+      const tds = await db.doc('daily/' + day() + '/scores/' + uid).get();
+      return res.json({ name, code: u.code, wallet: u.wallet, best: u.best || 0, today: tds.exists ? tds.data().score : 0, history: tx, refs: { count: u.refCount || 0, earned: u.refEarned || 0, list: fr }, cfg });
     }
     if (b.action === 'start') { await ref.set({ run: { t0: Date.now() } }, { merge: true }); return res.json({ ok: true }); }
     if (b.action === 'score') {
-      const s = Math.floor(Number(b.score));
+      const s = Math.floor(Number(b.score)), cn = Math.floor(Number(b.coins)) || 0;
       if (!u0.run || !(s >= 0)) throw ue('No active run');
       const el = (Date.now() - u0.run.t0) / 1000;
       await ref.set({ run: FV.delete() }, { merge: true }); // one score per run
-      if (s > el * 40 + 30) throw ue('Invalid score');
+      if (cn < 0 || cn > el * 8 + 6 || s > el * 40 + 30 + cn * 10) throw ue('Invalid score'); // each coin = +10 points
       const dref = db.doc('daily/' + day() + '/scores/' + uid), ds = await dref.get();
       if (!ds.exists || ds.data().score < s) await dref.set({ name, score: s }); // keeps only the highest score
       const best = Math.max(u0.best || 0, s);
       await ref.set({ best }, { merge: true });
-      return res.json({ best });
+      return res.json({ best: Math.max(ds.exists ? ds.data().score : 0, s) }); // today's best
     }
     if (b.action === 'board') {
       const col = db.collection('daily/' + day() + '/scores');
