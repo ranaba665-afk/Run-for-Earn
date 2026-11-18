@@ -106,6 +106,7 @@ button:active{background:#eee}
 .fld{display:block;width:100%;margin:8px 0;padding:12px;border:2px solid #555;font:400 clamp(15px,4.2vw,20px) Arial,sans-serif}
 .wd-err{color:#c00;font-size:14px;min-height:18px;margin:4px 0}
 #tgOnly{position:fixed;inset:0;z-index:20;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;font:400 clamp(18px,5vw,26px) monospace;color:#444}
+.coin-i{display:inline-block;width:10px;height:10px;border:3px solid #555;border-radius:50%;vertical-align:-1px}
 </style>
 </head>
 <body>
@@ -173,6 +174,7 @@ button:active{background:#eee}
   <div id="gameScreen" class="hidden">
   <header>
     <div class="brand">BUNNY RUNNER</div>
+    <div class="pill"><span class="coin-i"></span> <b id="coins">0</b></div>
     <div class="pill">HI <b id="best">00000</b></div>
     <div class="pill"><b id="score">00000</b></div>
   </header>
@@ -205,14 +207,16 @@ button:active{background:#eee}
 'use strict';
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
 const area=document.getElementById('gameArea');
-const scoreEl=document.getElementById('score'),bestEl=document.getElementById('best');
+const scoreEl=document.getElementById('score'),bestEl=document.getElementById('best'),coinsEl=document.getElementById('coins');
 const startOverlay=document.getElementById('startOverlay'),overOverlay=document.getElementById('overOverlay');
 const finalScore=document.getElementById('finalScore'),finalBest=document.getElementById('finalBest');
 let W=900,H=440,dpr=1,ground=350,last=0,raf=0;
-let running=false,over=false,score=0,best=Number(localStorage.getItem('bunnyRushBest')||0),worldTime=0;
-let speed=330,spawn=0,obstacles=[],clouds=[],particles=[],day=0;
+let running=false,over=false,score=0,best=0,worldTime=0;
+let speed=300,spawn=0,obstacles=[],coinsArr=[],coinCount=0,clouds=[],particles=[],day=0;
 const bunny={x:115,y:0,vy:0,jumping:false,duck:false,duckUntil:0,run:0};
 bestEl.textContent=String(best).padStart(5,'0');
+const istDay=()=>new Date(Date.now()+19800000).toISOString().slice(0,10);let bestDay=istDay();
+function rollover(){const d=istDay();if(d!==bestDay){bestDay=d;best=0;bestEl.textContent='00000'}}
 function resize(){
  const r=area.getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,2);
  W=Math.max(320,r.width);H=Math.max(240,r.height);
@@ -286,32 +290,34 @@ function drawObstacle(o){
  }
  ctx.restore();
 }
+function drawCoin(c){const x=Math.round(c.x),y=Math.round(c.y);ctx.fillStyle='#555';ctx.fillRect(x-5,y-9,10,18);ctx.fillRect(x-9,y-5,18,10);ctx.fillRect(x-7,y-7,14,14);ctx.fillStyle='#fff';ctx.fillRect(x-2,y-5,4,10)}
 function draw(){
  ctx.clearRect(0,0,W,H);drawBackground(running?1/60:0);
  for(const o of obstacles)drawObstacle(o);
+ for(const c of coinsArr)drawCoin(c);
  drawBunny();
 }
 function start(){
- track();
+ track();rollover();
  document.getElementById('homeScreen').classList.add('hidden');
  document.getElementById('homeInfo').classList.add('hidden');
  document.getElementById('gameScreen').classList.remove('hidden');
- requestAnimationFrame(()=>{resize();cancelAnimationFrame(raf);running=true;over=false;score=0;speed=330;spawn=.8;obstacles=[];particles=[];
+ requestAnimationFrame(()=>{resize();cancelAnimationFrame(raf);running=true;over=false;score=0;speed=300;spawn=.8;obstacles=[];coinsArr=[];coinCount=0;coinsEl.textContent='0';particles=[];
  bunny.y=ground;bunny.vy=0;bunny.jumping=false;bunny.duck=false;bunny.run=0;
  startOverlay.classList.add('hidden');overOverlay.classList.add('hidden');
  last=performance.now();draw();raf=requestAnimationFrame(loop);});
 }
 function end(){
- running=false;over=true;best=Math.max(best,Math.floor(score));
- localStorage.setItem('bunnyRushBest',String(best));bestEl.textContent=String(best).padStart(5,'0');
+ running=false;over=true;rollover();best=Math.max(best,Math.floor(score));
+ bestEl.textContent=String(best).padStart(5,'0');
  finalScore.textContent=String(Math.floor(score)).padStart(5,'0');finalBest.textContent=String(best).padStart(5,'0');
- overOverlay.classList.remove('hidden');submitScore(Math.floor(score));beep(160,.35,'sawtooth');maybeInterstitial();
+ overOverlay.classList.remove('hidden');submitScore(Math.floor(score),coinCount);beep(160,.35,'sawtooth');maybeInterstitial();
 }
 function jump(){if(!running||bunny.jumping||bunny.duck)return;bunny.vy=-690;bunny.jumping=true;beep(660,.08)}
 function duck(down){if(!running)return;bunny.duck=down;if(down)bunny.duckUntil=performance.now()+500}
 function loop(now){
  if(!running)return;let dt=Math.min((now-last)/1000,.035);last=now;
- score+=dt*speed*.055;speed=Math.min(690,speed+dt*5.2);
+ score+=dt*speed*.055;speed=Math.min(700,speed+dt*3);
  bunny.run+=dt;bunny.vy+=1850*dt;bunny.y+=bunny.vy*dt;
  if(bunny.y>=ground){bunny.y=ground;bunny.vy=0;bunny.jumping=false}
  if(bunny.duck&&now>bunny.duckUntil)bunny.duck=false;
@@ -320,9 +326,14 @@ function loop(now){
    const type=Math.random()<.27?'bird':(Math.random()<.5?'log':'cactus');
    obstacles.push({x:W+45,y:type==='bird'?ground-83:ground,type,flap:0});
    spawn=Math.max(.78,1.45-Math.min(speed,650)/900)+Math.random()*.65;
+   if(type!=='bird'&&Math.random()<.6)for(let k=-1;k<=1;k++)coinsArr.push({x:W+45+k*30,y:ground-105+Math.abs(k)*10});
+   if(Math.random()<.6){const cx=W+45+speed*spawn/2;for(let k=-1;k<=1;k++)coinsArr.push({x:cx+k*30,y:ground-42})}
  }
  for(const o of obstacles){o.x-=speed*dt;o.flap+=dt*12}
  obstacles=obstacles.filter(o=>o.x>-70);
+ for(const c of coinsArr)c.x-=speed*dt;
+ coinsArr=coinsArr.filter(c=>c.x>-30);
+ for(let i=coinsArr.length-1;i>=0;i--){const c=coinsArr[i];if(Math.abs(c.x-bunny.x)<34&&c.y>bunny.y-96&&c.y<bunny.y+12){coinsArr.splice(i,1);coinCount++;score+=10;coinsEl.textContent=coinCount;beep(1100,.05)}}
  for(const o of obstacles){
    const dx=Math.abs(o.x-bunny.x), bunnyBottom=bunny.y-(bunny.duck?16:0);
    if(dx<31){
@@ -401,11 +412,11 @@ async function api(action,data){
  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||r.status);return j;
 }
 function track(){if(online)api('start').catch(()=>{})}
-async function submitScore(sc){if(!online)return;try{const r=await api('score',{score:sc});best=Math.max(best,r.best);bestEl.textContent=String(best).padStart(5,'0')}catch(e){}}
+async function submitScore(sc,cn){if(!online)return;try{const r=await api('score',{score:sc,coins:cn});best=Math.max(best,r.best);bestEl.textContent=String(best).padStart(5,'0')}catch(e){}}
 function applyMe(m){
  online=true;applyCfg(m.cfg);$('userName').textContent=m.name;
  Object.assign(wallet,m.wallet);wallet.history=m.history||[];
- best=Math.max(best,m.best||0);bestEl.textContent=String(best).padStart(5,'0');
+ best=m.today||0;bestDay=istDay();bestEl.textContent=String(best).padStart(5,'0');
  code=m.code;inviteLink='https://t.me/'+BOT_USER+'?startapp='+code;
  $('invCode').textContent=code;$('invLink').textContent=inviteLink;
  $('invCount').textContent=m.refs.count;$('invEarn').textContent=m.refs.earned;
@@ -430,7 +441,7 @@ function applyCfg(c){
  [1,2,3].forEach(i=>$('pz'+i).textContent='₹'+PRIZES[i-1]);
  $('minWd').textContent=cfg.minWithdraw;$('refPct').textContent=+(cfg.refRate*100).toFixed(2);
 }
-const TERMS=()=>'• Only your highest score of the day counts on the daily leaderboard (IST, 12:00 AM - 11:59 PM).\n• Top 5 win prizes: '+PRIZES.map((p,i)=>'#'+(i+1)+' ₹'+p).join(', ')+'.\n• Prizes are added to your wallet after the day ends.\n• Invite friends and earn '+(+(cfg.refRate*100).toFixed(2))+'% of their prize winnings.\n• Minimum withdrawal ₹'+cfg.minWithdraw+', bank transfer only. Requests are reviewed and paid manually.\n• Cheating, bots, and fake or duplicate accounts lead to a permanent ban and cancelled winnings.\n• Prizes and rules may be changed by the admin at any time.';
+const TERMS=()=>'• This is a free-to-play SKILL-BASED game. It is NOT gambling, betting or a lottery. No luck or chance decides the winners: the ranking depends only on your own skill and score.\n• No deposit is ever required. You never have to add money, pay an entry fee or buy anything to play or to join the daily tournament.\n• Only your highest score of the day counts. The daily leaderboard and your HI score reset every midnight (IST, 12:00 AM - 11:59 PM).\n• Coins collected in the game only add bonus points to your score. Coins have no cash value.\n• Top 5 players of the day win prizes: '+PRIZES.map((p,i)=>'#'+(i+1)+' ₹'+p).join(', ')+'.\n• Prizes are added to your wallet after the day ends.\n• Invite friends and earn '+(+(cfg.refRate*100).toFixed(2))+'% of their prize winnings.\n• Minimum withdrawal ₹'+cfg.minWithdraw+', bank transfer only. Requests are reviewed and paid manually.\n• Cheating, bots, and fake or duplicate accounts lead to a permanent ban and cancelled winnings.\n• Prizes and rules may be changed by the admin at any time.';
 $('termsBtn').addEventListener('click',()=>showInfo('TERMS AND CONDITIONS',TERMS()));
 $('walletRules').addEventListener('click',()=>showInfo('RULES',TERMS()));
 $('withdrawBtn').addEventListener('click',()=>{
