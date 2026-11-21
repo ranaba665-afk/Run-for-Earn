@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
         const d = w.data(), u = U(d.uid), now = Date.now();
         if (b.action === 'pay') {
           t.update(u, { 'wallet.pending': FV.increment(-d.amount), 'wallet.withdrawn': FV.increment(d.amount) });
-          t.set(u.collection('tx').doc(), { label: 'Withdrawal of ₹' + d.amount + ' paid', amount: 0, t: now });
+          t.set(u.collection('tx').doc(), { label: 'Withdrawal of $' + d.amount + ' paid', amount: 0, t: now });
           t.update(wref, { status: 'paid', paidAt: now, ref: String(b.ref || '').slice(0, 60) });
         } else {
           t.update(u, { 'wallet.pending': FV.increment(-d.amount), 'wallet.available': FV.increment(d.amount) });
@@ -39,10 +39,10 @@ module.exports = async (req, res) => {
     if (b.action === 'settle') { if (!isDate(b.date) || b.date >= day()) throw ue('Only finished days can be paid'); return res.json(await settle(b.date)); }
     if (b.action === 'config') return res.json(await getConfig());
     if (b.action === 'setConfig') {
-      const p = (b.prizes || []).map(Number), r = Number(b.refRate), m = Number(b.minWithdraw);
+      const p = (b.prizes || []).map(Number), r = Number(b.refRate), m = Number(b.minWithdraw), wb = Number(b.welcomeBonus);
       if (p.length !== 5 || p.some(x => !(x >= 0 && x <= 100000))) throw ue('Enter 5 prizes (0 - 100000)');
-      if (!(r >= 0 && r <= 0.5) || !(m >= 1)) throw ue('Bad referral % or minimum');
-      await db.doc('config/main').set({ prizes: p, refRate: r, minWithdraw: m });
+      if (!(r >= 0 && r <= 0.5) || !(m >= 1) || !(wb >= 0 && wb <= 100)) throw ue('Bad referral %, minimum or welcome bonus');
+      await db.doc('config/main').set({ prizes: p, refRate: r, minWithdraw: m, welcomeBonus: wb });
       return res.json({ ok: true });
     }
     if (b.action === 'ban') {
