@@ -118,6 +118,9 @@ button:active{background:#eee}
 .home-menu{position:static;flex:none;width:min(78%,420px);margin:clamp(14px,4vh,40px) auto 0;gap:clamp(12px,3vh,34px)}
 .home-menu button{height:clamp(50px,7vh,80px)}
 .home-terms{position:static;flex:none;margin-top:auto;padding:16px 0 4px}
+.lb-tabs{display:flex;gap:8px;width:100%;max-width:560px;margin:2px 0 10px}
+.lb-tabs button{flex:1;border:2px solid #555;background:#fff;font:400 clamp(15px,4.2vw,20px) monospace;letter-spacing:3px;padding:10px;color:#444}
+.lb-tabs button.on{background:#555;color:#fff}
 </style>
 </head>
 <body>
@@ -125,7 +128,7 @@ button:active{background:#eee}
   <section class="home" id="homeScreen">
     <div class="home-top">
       <div>HI: <span id="userName">USER NAME</span></div>
-      <div class="home-wallet" id="walletOpen">GAMES WALLET<br>₹<span id="walletAmount">00</span></div>
+      <div class="home-wallet" id="walletOpen">GAMES WALLET<br>$<span id="walletAmount">00</span></div>
     </div>
     <div class="home-center"><div class="home-rabbit">∩∩</div><div class="home-title">RUN for EARN</div></div>
     <div class="home-menu">
@@ -137,27 +140,29 @@ button:active{background:#eee}
   </section>
   <section class="wallet hidden" id="walletScreen">
     <div class="wallet-bar"><button class="wallet-back" id="walletBack" aria-label="Back">&lt;</button><h2>GAMES WALLET</h2></div>
-    <svg class="wallet-coins" width="150" height="130" viewBox="0 0 150 130" aria-hidden="true"><g fill="#fff" stroke="#333" stroke-width="2"><path d="M10 52v12c0 7 25 12 50 12s50-5 50-12V52" fill="#555"/><ellipse cx="60" cy="52" rx="50" ry="12"/><path d="M10 72v12c0 7 25 12 50 12s50-5 50-12V72" fill="#555"/><ellipse cx="60" cy="72" rx="50" ry="12"/><path d="M10 92v12c0 7 25 12 50 12s50-5 50-12V92" fill="#555"/><ellipse cx="60" cy="92" rx="50" ry="12"/><circle cx="100" cy="42" r="32"/><circle cx="100" cy="42" r="25"/></g><text x="100" y="54" text-anchor="middle" font-size="34" font-family="Arial" fill="#333">₹</text></svg>
+    <svg class="wallet-coins" width="150" height="130" viewBox="0 0 150 130" aria-hidden="true"><g fill="#fff" stroke="#333" stroke-width="2"><path d="M10 52v12c0 7 25 12 50 12s50-5 50-12V52" fill="#555"/><ellipse cx="60" cy="52" rx="50" ry="12"/><path d="M10 72v12c0 7 25 12 50 12s50-5 50-12V72" fill="#555"/><ellipse cx="60" cy="72" rx="50" ry="12"/><path d="M10 92v12c0 7 25 12 50 12s50-5 50-12V92" fill="#555"/><ellipse cx="60" cy="92" rx="50" ry="12"/><circle cx="100" cy="42" r="32"/><circle cx="100" cy="42" r="25"/></g><text x="100" y="54" text-anchor="middle" font-size="34" font-family="Arial" fill="#333">$</text></svg>
     <div class="wallet-lbl">AVAILABLE TO WITHDRAW</div>
-    <div class="wallet-big">₹ <span id="wBig">0.00</span></div>
+    <div class="wallet-big">$ <span id="wBig">0.00</span></div>
     <div class="wallet-box">
       <div class="wallet-grid">
-        <div class="wallet-cell">AVAILABLE<b>₹<span id="wAvail">0.00</span></b></div>
-        <div class="wallet-cell">PENDING WITHDRAWAL<b class="y">₹<span id="wPend">0.00</span></b></div>
-        <div class="wallet-cell">TOTAL EARNED<b class="r">₹<span id="wEarn">0.00</span></b></div>
-        <div class="wallet-cell">TOTAL WITHDRAWN<b>₹<span id="wDraw">0.00</span></b></div>
+        <div class="wallet-cell">AVAILABLE<b>$<span id="wAvail">0.00</span></b></div>
+        <div class="wallet-cell">PENDING WITHDRAWAL<b class="y">$<span id="wPend">0.00</span></b></div>
+        <div class="wallet-cell">TOTAL EARNED<b class="r">$<span id="wEarn">0.00</span></b></div>
+        <div class="wallet-cell">TOTAL WITHDRAWN<b>$<span id="wDraw">0.00</span></b></div>
       </div>
       <button id="withdrawBtn">WITHDRAW</button>
-      <div class="wallet-note">Minimum withdrawal : ₹<span id="minWd">200</span> , Bank only</div>
+      <div class="wallet-note" id="lockNote" style="display:none"></div>
+      <div class="wallet-note">Minimum withdrawal : $<span id="minWd">20</span> , USDT only</div>
     </div>
     <div class="wallet-hist"><h3>TRANSACTION HISTORY</h3><div id="walletHist"><div class="empty">No transactions yet</div></div></div>
     <button class="wallet-rules" id="walletRules">RULES</button>
   </section>
   <section class="wallet hidden" id="lbScreen">
     <div class="wallet-bar"><button class="wallet-back" data-back="lbScreen" aria-label="Back">&lt;</button><h2>LEADERBOARD</h2></div><div class="sc-line"></div>
-    <div class="podium"><div class="pd2">2<b id="pz2">₹100</b></div><div class="pd1">1<b id="pz1">₹200</b></div><div class="pd3">3<b id="pz3">₹50</b></div></div>
+    <div class="lb-tabs"><button id="lbT" class="on">TODAY</button><button id="lbP">PAST DAY</button></div>
+    <div class="podium"><div class="pd2">2<b id="pz2">$15</b></div><div class="pd1">1<b id="pz1">$20</b></div><div class="pd3">3<b id="pz3">$10</b></div></div>
     <div class="row-box" style="margin-top:16px"><span>your rank</span><span id="lbRank">#0</span><span><span id="lbScore">00000</span> score</span></div>
-    <div class="lb-note">TOP 5 WIN PRIZES , DAILY LEADERBOARD START IN 00:00 AM TO 12:00 PM</div>
+    <div class="lb-note" id="lbNote">TOP 5 WIN PRIZES , DAILY LEADERBOARD START IN 00:00 AM TO 12:00 PM</div>
     <div id="lbRows" style="width:100%;max-width:560px"></div>
     <button class="link-btn" id="lbTerms">terms and conditions</button>
   </section>
@@ -169,16 +174,16 @@ button:active{background:#eee}
     <div class="inv-btns"><button id="invCopy">COPY</button><button class="share" id="invShare">SHARE</button></div>
     <div class="sc-line"></div>
     <div class="how"><h3>HOW IT WORKS</h3><p>• Share your link with friends. Your code is inside the link.</p><p>• When a friend signs up with your link and wins prize money, you get <span id="refPct">5</span>% of their winnings, for life.</p><p>• Your commission goes to your wallet automatically.</p></div>
-    <div style="width:100%;max-width:560px;font-size:clamp(16px,4.6vw,26px);margin:16px 0 8px">Friends you referred (<span id="invCount">0</span>) • earned ₹<span id="invEarn">0</span></div>
+    <div style="width:100%;max-width:560px;font-size:clamp(16px,4.6vw,26px);margin:16px 0 8px">Friends you referred (<span id="invCount">0</span>) • earned $<span id="invEarn">0</span></div>
     <div id="invList" style="width:100%;max-width:560px"><div class="row-box" style="color:#999">No friends yet</div></div>
   </section>
   <div class="modal hidden" id="adsModal"><div class="mbox"><h2>BLOCK ADS</h2><p>WATCH 10 ADS TO GET AD FREE TODAY MIDNIGHT</p><div class="ads-grid" id="adsGrid"></div><button id="watchAdBtn">WATCH AD (00/10)</button></div><button class="mclose" data-close="adsModal">CLOSE</button></div>
   <div class="modal hidden" id="setModal"><div class="mbox"><h2>SETTINGS</h2><div class="set-line"></div><button class="set-row" id="soundBtn">SOUND : <span id="soundTxt"></span></button><button class="set-row" id="logoutBtn">LOG OUT</button></div><button class="mclose" data-close="setModal">CLOSE</button></div>
-  <div class="modal hidden" id="wdModal"><div class="mbox"><h2>WITHDRAW</h2><p id="wdBal"></p>
-    <input class="fld" id="wdName" placeholder="Account holder name" autocomplete="off">
-    <input class="fld" id="wdAcc" placeholder="Bank account number" inputmode="numeric" autocomplete="off">
-    <input class="fld" id="wdIfsc" placeholder="IFSC code" autocapitalize="characters" autocomplete="off">
-    <input class="fld" id="wdAmt" placeholder="Amount (₹)" inputmode="decimal" autocomplete="off">
+  <div class="modal hidden" id="bonusModal"><div class="mbox"><h2>WELCOME!</h2><p>Your welcome bonus</p><div style="font-size:clamp(40px,12vw,64px);margin:6px 0 14px">$<span id="bonusAmt">5.00</span></div><p style="font-size:13px">It unlocks for withdrawal after you win a daily leaderboard prize.</p><p class="wd-err" id="bonusErr"></p><button id="bonusClaim">CLAIM</button></div></div>
+  <div class="modal hidden" id="wdModal"><div class="mbox"><h2>WITHDRAW</h2><p id="wdBal"></p><p style="font-size:13px">USDT only. Check the network and address carefully: funds sent to a wrong address cannot be recovered.</p>
+    <select class="fld" id="wdNet"><option value="TRC20">USDT - TRC20 (Tron)</option><option value="BEP20">USDT - BEP20 (BNB Chain)</option></select>
+    <input class="fld" id="wdAddr" placeholder="Your USDT wallet address" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input class="fld" id="wdAmt" placeholder="Amount (USDT)" inputmode="decimal" autocomplete="off">
     <div class="wd-err" id="wdErr"></div><button id="wdSubmit">SEND REQUEST</button></div><button class="mclose" data-close="wdModal">CANCEL</button></div>
   <div id="tgOnly" class="hidden"><div>RUN for EARN</div><div>Please open this game inside Telegram.</div><button class="go-btn" onclick="location.href='https://t.me/run_for_earn_bot'">OPEN TELEGRAM</button></div>
   <div class="home-info hidden" id="homeInfo"><div class="info-card"><h2 id="infoTitle">LEADERBOARD</h2><p id="infoText">Coming soon</p><button id="infoClose">CLOSE</button></div></div>
@@ -370,10 +375,11 @@ window.addEventListener('keydown',e=>{
 const wallet={available:0,pending:0,earned:0,withdrawn:0,history:[]};
 const $=id=>document.getElementById(id),fmt=n=>Number(n).toFixed(2);
 function renderWallet(){
+ const lk=Number(wallet.bonus||0);$('lockNote').style.display=lk>0?'block':'none';$('lockNote').textContent='🔒 Welcome bonus $'+fmt(lk)+' is locked. It unlocks when you win a daily leaderboard prize.';
  $('wBig').textContent=$('wAvail').textContent=fmt(wallet.available);
  $('wPend').textContent=fmt(wallet.pending);$('wEarn').textContent=fmt(wallet.earned);$('wDraw').textContent=fmt(wallet.withdrawn);
- $('walletAmount').textContent=Math.floor(wallet.available);
- $('walletHist').innerHTML=wallet.history.length?wallet.history.map(t=>'<div class="row"><span>'+esc(t.label)+'</span><b>'+(t.amount?(t.amount<0?'-':'+')+'₹'+fmt(Math.abs(t.amount)):'')+'</b></div>').join(''):'<div class="empty">No transactions yet</div>';
+ $('walletAmount').textContent=fmt(wallet.available);
+ $('walletHist').innerHTML=wallet.history.length?wallet.history.map(t=>'<div class="row"><span>'+esc(t.label)+'</span><b>'+(t.amount?(t.amount<0?'-':'+')+'$'+fmt(Math.abs(t.amount)):'')+'</b></div>').join(''):'<div class="empty">No transactions yet</div>';
 }
 $('walletOpen').addEventListener('click',()=>{adBreak();renderWallet();$('walletScreen').classList.remove('hidden')});
 $('walletBack').addEventListener('click',()=>$('walletScreen').classList.add('hidden'));
@@ -382,7 +388,7 @@ const open=id=>$(id).classList.remove('hidden'),shut=id=>$(id).classList.add('hi
 document.querySelectorAll('[data-back]').forEach(b=>b.addEventListener('click',()=>shut(b.dataset.back)));
 document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>shut(b.dataset.close)));
 // Leaderboard
-let PRIZES=[200,100,50,30,20];
+let PRIZES=[20,15,10,5,2];
 $('lbTerms').addEventListener('click',()=>$('termsBtn').click());
 // Invite friends
 const BOT='https://t.me/run_for_earn_bot';
@@ -425,48 +431,52 @@ async function api(action,data){
 function track(){if(online)api('start').catch(()=>{})}
 async function submitScore(sc,cn){if(!online)return;try{const r=await api('score',{score:sc,coins:cn});best=Math.max(best,r.best);bestEl.textContent=String(best).padStart(5,'0')}catch(e){}}
 function applyMe(m){
- online=true;applyCfg(m.cfg);$('userName').textContent=m.name;
+ online=true;applyCfg(m.cfg);if(m.bonusPending>0){$('bonusAmt').textContent=fmt(m.bonusPending);open('bonusModal')}$('userName').textContent=m.name;
  Object.assign(wallet,m.wallet);wallet.history=m.history||[];
  best=m.today||0;bestDay=istDay();bestEl.textContent=String(best).padStart(5,'0');
  code=m.code;inviteLink='https://t.me/'+BOT_USER+'?startapp='+code;
  $('invCode').textContent=code;$('invLink').textContent=inviteLink;
- $('invCount').textContent=m.refs.count;$('invEarn').textContent=m.refs.earned;
- $('invList').innerHTML=m.refs.list.length?m.refs.list.map(f=>'<div class="row-box"><span>'+esc(f.name)+'</span><span>₹'+f.earned+'</span></div>').join(''):'<div class="row-box" style="color:#999">No friends yet</div>';
+ $('invCount').textContent=m.refs.count;$('invEarn').textContent=fmt(m.refs.earned);
+ $('invList').innerHTML=m.refs.list.length?m.refs.list.map(f=>'<div class="row-box"><span>'+esc(f.name)+'</span><span>$'+fmt(f.earned)+'</span></div>').join(''):'<div class="row-box" style="color:#999">No friends yet</div>';
  renderWallet();
 }
-const lbHtml=rows=>PRIZES.map((p,i)=>{const r=rows[i];return '<div class="row-box"><span>#'+(i+1)+' '+(r?esc(r.name):'—')+'</span><span>'+(r?r.score+' score':'')+'</span><span>₹'+p+'</span></div>'}).join('');
-$('leaderboardBtn').addEventListener('click',async()=>{
- adBreak();
- $('lbScore').textContent=String(Math.floor(best)).padStart(5,'0');
- $('lbRows').innerHTML=lbHtml([]);open('lbScreen');
+const lbHtml=rows=>PRIZES.map((p,i)=>{const r=rows[i];return '<div class="row-box"><span>#'+(i+1)+' '+(r?esc(r.name):'—')+'</span><span>'+(r?r.score+' score':'')+'</span><span>$'+p+'</span></div>'}).join('');
+let lbWhich='today';
+function lbTab(){$('lbT').classList.toggle('on',lbWhich==='today');$('lbP').classList.toggle('on',lbWhich==='past');$('lbNote').textContent=lbWhich==='today'?'TOP 5 WIN PRIZES. THE DAILY LEADERBOARD RESETS EVERY MIDNIGHT (IST).':"YESTERDAY'S FINAL RESULT. PRIZES ARE ADDED TO THE WINNERS' WALLETS."}
+async function loadLb(){
+ lbTab();$('lbRows').innerHTML=lbHtml([]);$('lbRank').textContent='#0';$('lbScore').textContent='00000';
  if(!online)return;
- try{const b=await api('board');applyCfg({prizes:b.prizes});$('lbRows').innerHTML=lbHtml(b.top);$('lbRank').textContent='#'+b.rank;$('lbScore').textContent=String(b.score).padStart(5,'0')}catch(e){}
-});
+ const w=lbWhich;
+ try{const b=await api('board',{which:w});if(w!==lbWhich)return;applyCfg({prizes:b.prizes});$('lbRows').innerHTML=lbHtml(b.top);$('lbRank').textContent='#'+b.rank;$('lbScore').textContent=String(b.score).padStart(5,'0')}catch(e){}
+}
+$('leaderboardBtn').addEventListener('click',()=>{adBreak();lbWhich='today';open('lbScreen');loadLb()});
+$('lbT').addEventListener('click',()=>{lbWhich='today';loadLb()});
+$('lbP').addEventListener('click',()=>{lbWhich='past';loadLb()});
 if(!initData)$('tgOnly').classList.remove('hidden');
 else api('me').then(applyMe).catch(e=>showInfo('ERROR',e.message||'Could not connect. Please reopen the app.'));
 $('gameScreen').addEventListener('pointerdown',()=>{if(running)jump()}); // tap anywhere = jump
 $('goLbBtn').addEventListener('click',()=>$('leaderboardBtn').click());
 // ---- Live config, withdrawals, ads, sound ----
-const cfg={prizes:PRIZES,minWithdraw:200,refRate:.05};
+const cfg={prizes:PRIZES,minWithdraw:20,refRate:.05,welcomeBonus:5};
 function applyCfg(c){
  if(c)Object.assign(cfg,c);PRIZES=cfg.prizes;
- [1,2,3].forEach(i=>$('pz'+i).textContent='₹'+PRIZES[i-1]);
+ [1,2,3].forEach(i=>$('pz'+i).textContent='$'+PRIZES[i-1]);
  $('minWd').textContent=cfg.minWithdraw;$('refPct').textContent=+(cfg.refRate*100).toFixed(2);
 }
-const TERMS=()=>'• This is a free-to-play SKILL-BASED game. It is NOT gambling, betting or a lottery. No luck or chance decides the winners: the ranking depends only on your own skill and score.\n• No deposit is ever required. You never have to add money, pay an entry fee or buy anything to play or to join the daily tournament.\n• Only your highest score of the day counts. The daily leaderboard and your HI score reset every midnight (IST, 12:00 AM - 11:59 PM).\n• Coins collected in the game only add bonus points to your score. Coins have no cash value.\n• Top 5 players of the day win prizes: '+PRIZES.map((p,i)=>'#'+(i+1)+' ₹'+p).join(', ')+'.\n• Prizes are added to your wallet after the day ends.\n• Invite friends and earn '+(+(cfg.refRate*100).toFixed(2))+'% of their prize winnings.\n• Minimum withdrawal ₹'+cfg.minWithdraw+', bank transfer only. Requests are reviewed and paid manually.\n• Cheating, bots, and fake or duplicate accounts lead to a permanent ban and cancelled winnings.\n• Prizes and rules may be changed by the admin at any time.';
+const TERMS=()=>'• This is a free-to-play SKILL-BASED game. It is NOT gambling, betting or a lottery. No luck or chance decides the winners: the ranking depends only on your own skill and score.\n• No deposit is ever required. You never have to add money, pay an entry fee or buy anything to play or to join the daily tournament.\n• Only your highest score of the day counts. The daily leaderboard and your HI score reset every midnight (IST, 12:00 AM - 11:59 PM). Yesterday\'s final result is shown under PAST DAY.\n• Coins collected in the game only add bonus points to your score. Coins have no cash value.\n• Top 5 players of the day win prizes in USDT: '+PRIZES.map((p,i)=>'#'+(i+1)+' $'+p).join(', ')+'.\n• Prizes are added to your wallet after the day ends.\n• New players get a one-time welcome bonus of $'+cfg.welcomeBonus+'. The bonus is locked and becomes withdrawable only after you win a daily leaderboard prize. One bonus per person: using multiple or fake accounts to collect bonuses is not allowed and the bonus may be cancelled.\n• Invite friends and earn '+(+(cfg.refRate*100).toFixed(2))+'% of their prize winnings.\n• Withdrawals are paid in USDT only (TRC20 or BEP20 network), minimum $'+cfg.minWithdraw+'. Requests are reviewed and paid manually by the admin. Always double-check your network and wallet address: funds sent to a wrong address cannot be recovered.\n• Cheating, bots, and fake or duplicate accounts lead to a permanent ban and cancelled winnings.\n• Prizes and rules may be changed by the admin at any time.';
 $('termsBtn').addEventListener('click',()=>showInfo('TERMS AND CONDITIONS',TERMS()));
 $('walletRules').addEventListener('click',()=>showInfo('RULES',TERMS()));
 $('withdrawBtn').addEventListener('click',()=>{
  if(wallet.pending>0)return showInfo('WITHDRAW','You already have a pending withdrawal. Please wait until it is paid.');
- if(wallet.available<cfg.minWithdraw)return showInfo('WITHDRAW','Minimum withdrawal is ₹'+cfg.minWithdraw+'. Your available balance is ₹'+fmt(wallet.available)+'.');
- $('wdBal').textContent='Available: ₹'+fmt(wallet.available);$('wdAmt').value=Math.floor(wallet.available);$('wdErr').textContent='';open('wdModal');
+ if(Math.round(wallet.available*100)/100<cfg.minWithdraw)return showInfo('WITHDRAW','Minimum withdrawal is $'+cfg.minWithdraw+'. Your available balance is $'+fmt(wallet.available)+'.');
+ $('wdBal').textContent='Available: $'+fmt(wallet.available);$('wdAmt').value=fmt(wallet.available);$('wdErr').textContent='';open('wdModal');
 });
 $('wdSubmit').addEventListener('click',async()=>{
  const b=$('wdSubmit');b.disabled=true;$('wdErr').textContent='';
  try{
-  await api('withdraw',{name:$('wdName').value,acc:$('wdAcc').value,ifsc:$('wdIfsc').value,amount:$('wdAmt').value});
+  await api('withdraw',{net:$('wdNet').value,addr:$('wdAddr').value,amount:$('wdAmt').value});
   applyMe(await api('me'));shut('wdModal');
-  showInfo('REQUEST SENT','Your withdrawal request is pending. It will be paid to your bank account after review.');
+  showInfo('REQUEST SENT','Your USDT withdrawal request is pending. It will be sent to your wallet address after review.');
  }catch(e){$('wdErr').textContent=e.message}
  b.disabled=false;
 });
@@ -491,6 +501,12 @@ $('watchAdBtn').addEventListener('click',async()=>{
 // Sound
 let AC=null;
 function beep(f,d,ty){if(!store.get('rfeSound',true))return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=ty||'square';o.frequency.value=f;g.gain.value=.04;o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+$('bonusClaim').addEventListener('click',async()=>{
+ const b=$('bonusClaim');b.disabled=true;$('bonusErr').textContent='';
+ try{await api('claimBonus');applyMe(await api('me'));shut('bonusModal');showInfo('BONUS ADDED','Your welcome bonus has been added to your wallet.')}
+ catch(e){$('bonusErr').textContent=e.message}
+ b.disabled=false;
+});
 $('logoutBtn').addEventListener('click',()=>{if(tg&&tg.close)tg.close();else location.reload()});
 renderWallet();
 draw();
