@@ -8,7 +8,7 @@ try {
   if (!admin.apps.length) admin.initializeApp({ credential: admin.credential.cert(sa) });
 } catch (e) { initError = typeof e === 'string' ? e : 'Firebase setup failed (check the service account JSON)'; }
 const db = initError ? null : admin.firestore(), FV = admin.firestore.FieldValue;
-const DEF = { prizes: [200, 100, 50, 30, 20], refRate: 0.05, minWithdraw: 200 };
+const DEF = { prizes: [20, 15, 10, 5, 2], refRate: 0.05, minWithdraw: 20, welcomeBonus: 5 }; // USD / USDT
 const day = (back = 0) => new Date(Date.now() + 19800000 - back * 86400000).toISOString().slice(0, 10); // IST date
 const ue = m => Object.assign(new Error(m), { user: true }); // error safe to show to users
 async function getConfig() { const s = await db.doc('config/main').get(); return Object.assign({}, DEF, s.exists ? s.data() : {}); }
@@ -34,14 +34,15 @@ async function settle(date) {
     const top = (await t.get(dref.collection('scores').orderBy('score', 'desc').limit(10))).docs;
     const us = top.length ? await t.getAll(...top.map(d => U(d.id))) : [];
     const win = [];
-    us.forEach((u, i) => { const d = u.exists ? u.data() : {}; if (win.length < 5 && !d.banned) win.push({ id: u.id, name: d.name || 'Player', score: top[i].data().score, ref: d.referredBy || null }); });
+    us.forEach((u, i) => { const d = u.exists ? u.data() : {}; if (win.length < 5 && !d.banned) win.push({ id: u.id, name: d.name || 'Player', score: top[i].data().score, ref: d.referredBy || null, bonus: (d.wallet && d.wallet.bonus) || 0 }); });
     const rids = [...new Set(win.map(w => w.ref).filter(Boolean))];
     const rs = rids.length ? await t.getAll(...rids.map(U)) : [];
     const rok = new Set(rs.filter(r => r.exists && !r.data().banned).map(r => r.id));
     const now = Date.now();
     win.forEach((w, i) => {
       const amt = cfg.prizes[i] || 0; w.prize = amt; if (!amt) return;
-      t.set(U(w.id), { wallet: { available: FV.increment(amt), earned: FV.increment(amt) } }, { merge: true });
+      t.set(U(w.id), { wallet: { available: FV.increment(amt + w.bonus), earned: FV.increment(amt), bonus: 0 } }, { merge: true }); // a prize unlocks the locked welcome bonus
+      if (w.bonus > 0) t.set(U(w.id).collection('tx').doc(), { label: 'Welcome bonus unlocked', amount: w.bonus, t: now });
       t.set(U(w.id).collection('tx').doc(), { label: 'Rank #' + (i + 1) + ' prize ' + date, amount: amt, t: now });
       const c = Math.round(amt * cfg.refRate * 100) / 100;
       if (w.ref && rok.has(w.ref) && c > 0) {
