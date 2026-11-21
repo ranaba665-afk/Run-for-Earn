@@ -24,13 +24,13 @@ module.exports = async (req, res) => {
           const rid = String(parseInt(v.start, 36));
           if (rid !== uid && (await db.collection('users').doc(rid).get()).exists) { referredBy = rid; await db.collection('users').doc(rid).set({ refCount: FV.increment(1) }, { merge: true }); }
         }
-        await ref.set({ name, code: Number(uid).toString(36).toUpperCase(), wallet: { available: 0, pending: 0, earned: 0, withdrawn: 0 }, best: 0, referredBy, refCount: 0, refEarned: 0, createdAt: Date.now() });
+        await ref.set({ name, code: Number(uid).toString(36).toUpperCase(), wallet: { available: 0, pending: 0, earned: 0, withdrawn: 0 }, best: 0, referredBy, refCount: 0, refEarned: 0, createdAt: Date.now(), bonusPending: cfg.welcomeBonus > 0 ? cfg.welcomeBonus : 0, bonusClaimed: 0 });
       } else await ref.set({ name }, { merge: true });
       const u = (await ref.get()).data();
       const tx = (await ref.collection('tx').orderBy('t', 'desc').limit(20).get()).docs.map(d => ({ label: d.data().label, amount: d.data().amount }));
       const fr = (await db.collection('users').where('referredBy', '==', uid).limit(50).get()).docs.map(d => ({ name: d.data().name, earned: d.data().refEarnedForReferrer || 0 }));
       const tds = await db.doc('daily/' + day() + '/scores/' + uid).get();
-      return res.json({ name, code: u.code, wallet: u.wallet, best: u.best || 0, today: tds.exists ? tds.data().score : 0, history: tx, refs: { count: u.refCount || 0, earned: u.refEarned || 0, list: fr }, cfg });
+      return res.json({ name, code: u.code, wallet: u.wallet, best: u.best || 0, today: tds.exists ? tds.data().score : 0, bonusPending: u.bonusPending || 0, history: tx, refs: { count: u.refCount || 0, earned: u.refEarned || 0, list: fr }, cfg });
     }
     if (b.action === 'start') { await ref.set({ run: { t0: Date.now() } }, { merge: true }); return res.json({ ok: true }); }
     if (b.action === 'score') {
@@ -46,7 +46,7 @@ module.exports = async (req, res) => {
       return res.json({ best: Math.max(ds.exists ? ds.data().score : 0, s) }); // today's best
     }
     if (b.action === 'board') {
-      const col = db.collection('daily/' + day() + '/scores');
+      const col = db.collection('daily/' + (b.which === 'past' ? day(1) : day()) + '/scores'); // today or yesterday (IST)
       const top = (await col.orderBy('score', 'desc').limit(5).get()).docs.map(d => ({ name: d.data().name, score: d.data().score }));
       const mine = await col.doc(uid).get();
       let rank = 0, sc = 0;
@@ -54,17 +54,26 @@ module.exports = async (req, res) => {
       return res.json({ top, rank, score: sc, prizes: cfg.prizes });
     }
     if (b.action === 'withdraw') {
-      const amt = Math.round(Number(b.amount) * 100) / 100;
-      const holder = String(b.name || '').trim(), acc = String(b.acc || '').replace(/\s/g, ''), ifsc = String(b.ifsc || '').toUpperCase().trim();
-      if (!(amt >= cfg.minWithdraw)) throw ue('Minimum withdrawal is ₹' + cfg.minWithdraw);
-      if (holder.length < 3 || holder.length > 60 || !/^\d{9,18}$/.test(acc) || !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(ifsc)) throw ue('Please check the bank details');
+      const amt = Math.round(Number(b.amount) * 100) / 100, net = String(b.net || ''), addr = String(b.addr || '').trim();
+      if (!(amt >= cfg.minWithdraw)) throw ue('Minimum withdrawal is $' + cfg.minWithdraw);
+      const okAddr = net === 'TRC20' ? /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(addr) : net === 'BEP20' ? /^0x[0-9a-fA-F]{40}$/.test(addr) : false;
+      if (!okAddr) throw ue('Please check the USDT network and wallet address');
       await db.runTransaction(async t => {
-        const w = ((await t.get(ref)).data() || {}).wallet || {};
+        const u = (await t.get(ref)).data() || {}, w = u.wallet || {};
         if ((w.pending || 0) > 0) throw ue('You already have a pending withdrawal');
-        if (amt > (w.available || 0) + 1e-9) throw ue('Insufficient balance');
+        if (amt > (w.available || 0) + 1e-6) throw ue('Insufficient balance');
         t.update(ref, { 'wallet.available': FV.increment(-amt), 'wallet.pending': FV.increment(amt) });
         t.set(ref.collection('tx').doc(), { label: 'Withdrawal requested', amount: -amt, t: Date.now() });
-        t.set(db.collection('withdrawals').doc(), { uid, tgName: name, holder, acc, ifsc, amount: amt, status: 'pending', t: Date.now() });
+        t.set(db.collection('withdrawals').doc(), { uid, tgName: name, net, addr, amount: amt, status: 'pending', t: Date.now(), earned: w.earned || 0, bonus: u.bonusClaimed || 0, since: u.createdAt || 0, refBy: u.referredBy || null });
+      });
+      return res.json({ ok: true });
+    }
+    if (b.action === 'claimBonus') { // one-time welcome bonus
+      await db.runTransaction(async t => {
+        const u = (await t.get(ref)).data() || {}, amt = u.bonusPending || 0;
+        if (!(amt > 0)) throw ue('No bonus to claim');
+        t.update(ref, { 'wallet.bonus': FV.increment(amt), bonusPending: 0, bonusClaimed: amt }); // locked until the player wins a prize
+        t.set(ref.collection('tx').doc(), { label: 'Welcome bonus (locked until you win a prize)', amount: 0, t: Date.now() });
       });
       return res.json({ ok: true });
     }
